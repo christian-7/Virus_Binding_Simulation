@@ -1,7 +1,7 @@
 
 function [count]= binding_simulation(nC, nR, fig);
 
-%% Select Parameters
+%% Select Parameters1
 
 a = 0;      % lower XY limit
 b = 1;      % upper XY limit
