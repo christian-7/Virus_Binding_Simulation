@@ -4,13 +4,14 @@ function [count]= binding_simulation_constNoise(nC, nR, fig);
 %% Select Parameters
 
 a = 0;      % lower XY limit
-b = 1;      % upper XY limit
+b = 1000;   % upper XY limit
 
 % Number of clusters, cluster density (cluster/?m2)
 
-% nC = 10;        % Number of clusters
-% nR = 100;       % Number of receptors per cluster
-nTot = 2000;      % Total number of receptors
+% nC              = 10;        % Number of clusters
+% nR              = 100;       % Number of receptors per cluster
+ClusterRadius   = 25;        % Cluster Radius
+nTot            = 2000;      % Total number of receptors
 
 %% Generate Clusters without noise --> store in variable clusters
 
@@ -27,10 +28,10 @@ clustery=[];
 
 for count=1:length(centersx);
    
-    clustercx = (randn(nR,1)/50)+centersx(count);
-    clustercy = (randn(nR,1)/50)+centersy(count);
-    clusterx=[clusterx; clustercx];
-    clustery=[clustery; clustercy];
+    clustercx = (randn(nR,1)*ClusterRadius)+centersx(count); % cluster radius 50 nm
+    clustercy = (randn(nR,1)*ClusterRadius)+centersy(count);
+    clusterx  = [clusterx; clustercx];
+    clustery  = [clustery; clustercy];
     clear clustercx cluster cy
     count=count+1;
    
@@ -67,9 +68,9 @@ title('Clusters')
 
 else end
 
-%% Select a random point and find Localization around a cricle 
+% Select a random point and find Localization around a cricle 
 
-rV = 0.05; % Radius Virus
+rV = 50; % Radius Virus
 
 % Generate location of the virus X,Y
 
@@ -105,4 +106,3 @@ for i=1:length(allRec);
 end
 
 end
-
