@@ -1,98 +1,203 @@
-%% CCDF for having a given number of receptors at the pathogen-cell interface
-% nR = number of receptors per cluster
+%% 2D Particle binding simulation
 
-clear, clc, close all, figure('Position',[400 50 800 600])
-aver=[0,0];
-l=1;
-nR=[0:1:50];
+% Author: Christian Sieben, EPFL 
+% sieben.christian@gmail.com
+% April 2020
 
+% Simulate particle binding attempts using 
+% binding_simulation and binding_simulation_constNoise
+% Plot CCDF curves and binding probability  
 
-for m=[1,10,20,40];
+%% CCDF for binding a given number of receptors at the pathogen-cell interface
+
+clear, clc, close all
+
+nR      = (0:1:50);  % number of receptors per cluster  --> (locs per cluster)
+nTot    = 100;       % Total number of receptors        --> (molecules per µm2)
+nC      = 2;         % number of clusters               --> (cluster per µm2)
+iter    = 1000;      % number of iterations
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+successRate = {}; p = 0; rng shuffle
+
+for n = [1, 5, 10, 20, 50]; % minimum number of receptors  
     
-count=[];
+p = p + 1;
 
-for k=1:100;
+l = 1; aver = [0,0];
     
-    count(k,1)=binding_simulation(50,m,0);
+for m = [0,0.1,0.2,0.4,0.8,1] %                     --> (% in cluster)
     
+count=[]; success = 0; 
+
+for k=1:iter; % iterate of each degree of clustering
+    
+    count(k,1) = binding_simulation(nTot, nC,m,0); % # of receptors, # of clusters, degree of clustering, figure 
+    
+    if count(k,1) > n;
+        success = success+1; % count as successful attempt
+    else end
+                                             
 end
 
-% ecdf(count);hold on;  
-%  ccdf=1-ecdf(count);
+pd          = fitdist(count,'Normal'); % distribution of bound receptors per attempt
+ccdf(:,l)   = 1-cdf(pd,nR); % complementary CDF 
 
-pd = fitdist(count,'Normal');
-ccdf =1-cdf(pd,nR);
+aver(l,1) = m;                  % in cluster
+aver(l,2) = mean(count);        % mean bound receptors
+aver(l,3) = std(count);         % std bound receptors
+aver(l,4) = (success/iter)*100; % success rate in %
+l         = l+1;
 
-subplot(2,2,1)
-% loglog(ccdf); hold on;
-stairs(ccdf);hold on;
-set(gca, 'YScale', 'log')
-set(gca, 'XScale', 'log')
-axis([1e0 1e2 1e-2 1e0]);
-title('CCDF for having n bound receptors');
-xlabel('number of bound receptors [n]');
-ylabel('Probability [%]');
-
-legend('random','25 %','50 %','100 %','Location','southwest','FontSize',14)
-
-
-aver(l,1)=m;
-aver(l,2)=mean(count);
-l=l+1;
+clc, n
 
 end
 
-subplot(2,2,2)
-scatter(aver(:,1),aver(:,2))
+successRate{p, 1} = n;          % min number of receptors
+successRate{p, 2} = aver;   
+successRate{p, 3} = ccdf;
+
+end
+
+display('Done');
+
+figure('Position',[400 50 600 250])
+subplot(1,2,1)
+
+stairs(successRate{4, 3},'LineWidth',1);hold on;
+line([50 50], [1e-3 1e0], 'Color','black','LineWidth',2);
+set(gca, 'YScale', 'log');
+set(gca, 'XScale', 'log');
+axis([1e0 1e2 1e-3 1e0]);
+% title('CCDF for having n bound receptors');
+xlabel('number of receptors [n]');
+ylabel('binding probability [%]'); % probablity to bind n receptors
+box on
+leg = legend('show');
+title(leg,'Degree of clustering %')
+legend('random','10','20','40','80','100','Location','southwest');
+
+subplot(1,2,2)
+scatter(aver(:,1),aver(:,2)); hold on; 
+errorbar(aver(:,1),aver(:,2),aver(:,3));
 title('Mean number of bound receptors');
 ylabel('mean bound receptors');
-xlabel('receptors per cluster');
+xlabel('degree of clustering');
+box on
 
-%% ccdf for having a given number of receptors at the pathogen-cell interface for different cluster densities
+plot(aver(:,1),aver(:,4),'-o'); hold on; 
+ylabel('binding success rate (%)');
+xlabel('degree of clustering (%)');
+box on  
+axis square
+leg = legend('show');
+title(leg,'Minimum # of receptors')
+legend(num2str(n));
+box on
 
-aver=[0,0];
-l=1;
-nR=[0:1:50];
+figure('Position',[400 50 300 300])
 
-for m=[1,5,10,20,50];
-    
-count=[];
-
-for k=1:100;
-    
-    count(k,1)=binding_simulation_constNoise(20,m,0);
+for i = 1:size(successRate,1);
+   
+plot(successRate{i, 2}(:,1),successRate{i, 2}(:,4),'-o','LineWidth',1); hold on; 
+ylabel('binding success rate [%]');
+xlabel('degree of clustering [%]');
+box on  
+axis square
+leg = legend('show');
+title(leg,'Minimum # of receptors')
+legend('1','5', '10', '20', '50');
     
 end
 
-% ecdf(count);hold on;  
-% ccdf=1-ecdf(count);
+%% Iterate over spatial parameters (cluster size, density)
 
-pd = fitdist(count,'Normal');
-ccdf = 1-cdf(pd,nR);
+Steps   = 10;
+iter    = 100;
 
-subplot(2,2,3)
-% loglog(ccdf); hold on;
-stairs(ccdf);hold on;
+nR = linspace(1,100,Steps)';
+cR = linspace(1,100,Steps)';
+
+[p,q] = meshgrid(nR, cR);
+a3 = [p(:) q(:)];
+
+for i = 1:length(a3);   % choose the parameter combination
+
+    success = 0; 
+    
+    for k = 1:iter;     % run for n iterations
+    
+    count(k,1) = binding_simulation_constNoise(10, a3(i,1), a3(i,2), 0);
+    
+    if count(k,1) > 10;
+        success = success+1; % count as successful attempt
+    else end
+    
+    end
+    
+    a3(i,3) = mean(count);
+    a3(i,4) = (success/iter)*100; % binding probability 
+    clc;
+    display(['Done with: ' num2str(a3(i,1:2))])
+    
+end
+
+display('Done');
+
+%% Plot the result
+
+
+% x = a3(:,1)./(pi*(a3(:,2).^2)); % receptors/cluster area (nm2)
+x = a3(:,1);
+y = a3(:,2);
+z = a3(:,4);
+
+  xi = linspace(min(x),max(x),100);
+  yi = linspace(min(y),max(y),100);
+  [XI YI]=meshgrid(xi,yi);
+  ZI = griddata(x,y,z,XI,YI);
+ 
+% cmap = jet(32); % or 256, 64, 32 or whatever.
+
+figure('Position',[400 50 300 300])
+contourf(XI,YI,ZI,3) 
+axis square
+h = colorbar();
+ylabel(h,'Binding probability [%]','FontSize', 12)
+
+xlabel('receptors per cluster','FontSize', 12)
+ylabel('cluster radius [nm]','FontSize', 12)
+
+
+
+%% 
+
+figure('Position',[400 50 600 250])
+
+subplot(1,2,1)
+
+for i = 1:size(successRate,1);
+
+stairs(BindingWNoise{i, 3},'LineWidth',1);hold on;
 set(gca, 'YScale', 'log')
 set(gca, 'XScale', 'log')
 axis([1e0 1e2 1e-2 1e0]);
-title('CCDF for having n bound receptors');
+% title('CCDF for having n bound receptors');
 xlabel('number of receptors [n]');
 ylabel('Probability [%]');
-legend('random','5 rec/cluster','10 rec/cluster','20 rec/cluster','50 rec/cluster','Location','southwest','FontSize',14)
-
-
-aver(l,1)=m;
-aver(l,2)=mean(count);
-l=l+1;
-
+legend('random','10 rec/cluster','20 rec/cluster','50 rec/cluster','100 rec/cluster','Location','southwest')
+box on
 end
+line([50 50], [1e-3 1e0], 'Color','black','LineWidth',2);
 
-subplot(2,2,4)
-scatter(aver(:,1),aver(:,2))
-title('Mean number of bound receptors');
+subplot(1,2,2)
+plot(BindingWNoise{5, 2}(:,1),BindingWNoise{5, 2}(:,2),'-o','LineWidth',1, 'Color','black'); hold on; 
+% title('Mean number of bound receptors');
 ylabel('mean bound receptors');
 xlabel('receptors per cluster');
+box on
+
 
 
 

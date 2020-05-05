@@ -1,16 +1,33 @@
+%% 2D Particle binding simulation with clusters above a constant background density
+% Author: Christian Sieben, EPFL 
+% sieben.christian@gmail.com
+% April 2020
 
-function [count]= binding_simulation_constNoise(nC, nR, fig);
+% Simulation of a 2D surface (1x1µm) with
+% 
+% nC                = number of clusters
+% nR                = number of receptors per cluster  
+% ClusterRadius     = ClusterRadius
+% nBg               = Number of Bg receptors
+% fig               = make figure yes/no
+
+function [count]= binding_simulation_constNoise(nC, nR, cR, fig);
 
 %% Select Parameters
 
+% clear, clc, close all
+
 a = 0;      % lower XY limit
-b = 1;      % upper XY limit
+b = 1000;   % upper XY limit
 
-% Number of clusters, cluster density (cluster/?m2)
+% Number of clusters, cluster density (cluster/µm2)
 
-% nC = 10;        % Number of clusters
-% nR = 100;       % Number of receptors per cluster
-nTot = 2000;      % Total number of receptors
+% nC              = 10;          % Number of clusters
+% nR              = 100;         % Number of receptors per cluster
+% cR              = 100;         % Cluster Radius
+% nTot          = 2000;        % Total number of receptors
+nBg             = 100;
+% fig             = 1; 
 
 %% Generate Clusters without noise --> store in variable clusters
 
@@ -20,29 +37,35 @@ nTot = 2000;      % Total number of receptors
 centersx = (b-a).*rand(nC,1) + a; % generate centers
 centersy = (b-a).*rand(nC,1) + a; % generate centers
 
-% Generate Clusters
+% Generate Clusters with radius ClusterRadius and nR receptors
 
 clusterx=[];
 clustery=[];
 
 for count=1:length(centersx);
+    
+    tempX       = cR*sqrt(rand(nR,1));
+    tempY       = 2*pi*rand(nR,1);
+    
+    clustercx   = tempX.*cos(tempY)+centersx(count);
+    clustercy   = tempX.*sin(tempY)+centersy(count);
    
-    clustercx = (randn(nR,1)/50)+centersx(count);
-    clustercy = (randn(nR,1)/50)+centersy(count);
-    clusterx=[clusterx; clustercx];
-    clustery=[clustery; clustercy];
+    clusterx    = [clusterx; clustercx];
+    clustery    = [clustery; clustercy];
+    
     clear clustercx cluster cy
-    count=count+1;
+    
+    count       =   count+1;
    
 end
 
 % Generate List of remaining unclustered receptors
 
-Rec(:,1) = (b-a).*rand(1000,1) + a;
-Rec(:,2) = (b-a).*rand(1000,1) + a;
+Rec(:,1)        = (b-a).*rand(nBg,1) + a;
+Rec(:,2)        = (b-a).*rand(nBg,1) + a;
 
-clusters(:,1)=clusterx;
-clusters(:,2)=clustery;
+clusters(:,1)   = clusterx;
+clusters(:,2)   = clustery;
 
 % Combine all receptors 
 
@@ -58,18 +81,22 @@ subplot(1,3,1)
 scatter(centersx, centersy); hold on;
 title('Cluster centers')
 axis([a b a b]);
+axis([a b a b]);
+box on; xlabel('x [nm]');ylabel('y [nm]')
 
 subplot(1,3,2)
 scatter(clusterx(:), clustery(:),1);hold on;
 scatter(Rec(:,1), Rec(:,2),1);
 axis([a b a b]);
+axis([a b a b]);
+box on; xlabel('x [nm]');ylabel('y [nm]')
 title('Clusters')
 
 else end
 
-%% Select a random point and find Localization around a cricle 
+% Select a random point and find Localization around a cricle 
 
-rV = 0.05; % Radius Virus
+rV = 50; % Radius Virus
 
 % Generate location of the virus X,Y
 
@@ -86,7 +113,8 @@ scatter(Rec(:,1), Rec(:,2),1);
 scatter(locV(:,1),locV(:,2),'filled');
 viscircles(locV,rV)
 axis([a b a b]);
-title('Clusters')
+box on; xlabel('x [nm]');ylabel('y [nm]')
+title('Virus binding attempt')
 
 else end
 
