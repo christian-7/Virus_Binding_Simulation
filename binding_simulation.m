@@ -14,11 +14,10 @@
 % receptors are gradually shifted into clusters
 
 function [count]= binding_simulation(nTot, nC, fract, fig);
-%% Define parameters
+
+%% Select Parameters
 
 % clear, clc, close all
-
-% Define the simulated area
 
 a = 0;          % lower XY limit, nm
 b = 1000;       % upper XY limit, nm
@@ -26,13 +25,12 @@ b = 1000;       % upper XY limit, nm
 % Number of clusters, cluster density (cluster/um2)
 
 % fig     = 1;
-% nC      = 2;         % Number of clusters
-% fract   = 1;       % Fraction AF in cluster
-% nTot    = 100;       % Total number of AF
-
-%% Generate Clusters without noise --> store in variable clusters
+% nC      = 20;        % Number of clusters
+% fract   = 0.5;       % Number of receptors per cluster
+% nTot    = 2000;      % Total number of receptors
 
 % Generate random cluster centers
+%% Generate Clusters without noise --> store in variable clusters
 
 clusters = [];
 
@@ -51,6 +49,23 @@ end
 
 for i = 1:nC
     
+clusters = [];
+
+clusters(:,1) = a+(b-a).*rand(nC,1); % generate centers
+clusters(:,2) = a+(b-a).*rand(nC,1); % generate centers
+
+% Find cluster radius
+
+for i = 1:nC
+    
+    clusters(i,3) = 40+(150-40).*rand(1,1); % cluster radius in nm from STORM
+    
+end
+
+% Find number of rec per cluster
+
+for i = 1:nC
+    
    clusters(i,4) = (clusters(i,3)/(sum(clusters(:,3))));
    clusters(i,5) = round(clusters(i,4)*(fract*nTot)); 
    
@@ -63,6 +78,7 @@ clustery=[]; clustercx = [];
 
 for i=1:nC;
    
+
 %     clustercx = normrnd(clusters(i,1),clusters(i,3)/3,[clusters(i,5),1]); % locs as normal distribution
 %     clustercy = normrnd(clusters(i,2),clusters(i,3)/3,[clusters(i,5),1]); % locs as normal distribution
         
@@ -76,6 +92,12 @@ for i=1:nC;
     clustery  = [clustery; clustercy];
     
     clear clustercx clustercy tempX tempY  
+    clustercx = normrnd(clusters(i,1),clusters(i,3)/3,[clusters(i,5),1]);
+    clustercy = normrnd(clusters(i,2),clusters(i,3)/3,[clusters(i,5),1]);
+    clusterx  = [clusterx; clustercx];
+    clustery  = [clustery; clustercy];
+    clear clustercx cluster 
+
     
 end
 
@@ -87,6 +109,10 @@ Rec(:,2) = (b-a).*rand(nTot-(fract*nTot),1) + a;
 
 rec_clusters(:,1) = clusterx;
 rec_clusters(:,2) = clustery;
+
+rec_clusters(:,1)=clusterx;
+rec_clusters(:,2)=clustery;
+
 
 % Combine all receptors 
 
@@ -112,6 +138,7 @@ scatter(Rec(:,1), Rec(:,2),1);
 axis([a b a b]);
 box on
 title('Clusters ')
+
 axis square
 xlabel('x [nm]');ylabel('y [nm]');
 
@@ -157,4 +184,3 @@ for i=1:length(allRec);
 end
 
 end
-

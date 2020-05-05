@@ -22,12 +22,19 @@ b = 1000;   % upper XY limit
 
 % Number of clusters, cluster density (cluster/µm2)
 
+
 % nC              = 10;          % Number of clusters
 % nR              = 100;         % Number of receptors per cluster
 % cR              = 100;         % Cluster Radius
 % nTot          = 2000;        % Total number of receptors
 nBg             = 100;
 % fig             = 1; 
+
+% nC              = 10;        % Number of clusters
+% nR              = 100;       % Number of receptors per cluster
+ClusterRadius   = 25;        % Cluster Radius
+nTot            = 2000;      % Total number of receptors
+
 
 %% Generate Clusters without noise --> store in variable clusters
 
@@ -50,9 +57,16 @@ for count=1:length(centersx);
     clustercx   = tempX.*cos(tempY)+centersx(count);
     clustercy   = tempX.*sin(tempY)+centersy(count);
    
+
     clusterx    = [clusterx; clustercx];
     clustery    = [clustery; clustercy];
     
+
+    clustercx = (randn(nR,1)*ClusterRadius)+centersx(count); % cluster radius 50 nm
+    clustercy = (randn(nR,1)*ClusterRadius)+centersy(count);
+    clusterx  = [clusterx; clustercx];
+    clustery  = [clustery; clustercy];
+
     clear clustercx cluster cy
     
     count       =   count+1;
@@ -133,4 +147,3 @@ for i=1:length(allRec);
 end
 
 end
-
